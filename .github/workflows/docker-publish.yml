@@ -36,7 +36,6 @@ jobs:
       - name: Build Docker image
         run: |
           docker build \
-            --build-arg HF_MODEL_NAME=${{ secrets.HF_REPO_ID }} \
             -t ${{ secrets.DOCKERHUB_USERNAME }}/mlops-group38-emotion:${{ steps.tag.outputs.tag }} .
 
       - name: Push Docker image
