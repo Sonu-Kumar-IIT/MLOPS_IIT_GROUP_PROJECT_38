@@ -217,3 +217,15 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# MLOps project — large binary files and secrets
+artifacts/processed_ner_data.pkl
+checkpoints/
+wandb/
+*.pkl
+*.bin
+*.pt
+*.safetensors
+.env
+.env.*
+!.env.example

@@ -14,5 +14,4 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 COPY src ./src
 
-ENTRYPOINT ["python", "-m"]
-CMD ["src.inference.infrence_from_hub"]
+CMD ["python", "-m", "src.inference.infrence_from_hub"]
