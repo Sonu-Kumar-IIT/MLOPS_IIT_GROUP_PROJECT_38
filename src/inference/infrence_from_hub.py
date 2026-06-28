@@ -1,20 +1,20 @@
-"""Run NER inference by loading the fine-tuned model directly from Hugging Face Hub.
+"""Run Emotion Detection inference by loading the fine-tuned model from Hugging Face Hub.
 
 Usage:
-    HF_TOKEN=<token> INPUT_TEXT="Google launched a new model in California." \\
+    HF_TOKEN=<token> INPUT_TEXT="I feel so happy today!" \\
         python -m src.inference.infrence_from_hub
 
 Environment variables:
     HF_MODEL_NAME   — HF repo id  (default: value in config.py)
     HF_TOKEN        — HF access token (required for private repos)
-    INPUT_TEXT      — Text to run NER on (required)
+    INPUT_TEXT      — Text to classify (required)
 """
 
 import json
 import os
 import sys
 
-from transformers import AutoModelForTokenClassification, AutoTokenizer, pipeline
+from transformers import pipeline
 
 from src import config
 from src.utils import get_logger
@@ -23,22 +23,23 @@ logger = get_logger(__name__)
 
 
 def run_inference(input_text: str, model_name: str | None = None, hf_token: str | None = None):
-    """Download model from Hub and return token-label pairs."""
+    """Download model from Hub and return emotion prediction(s)."""
     model_name = model_name or os.getenv("HF_MODEL_NAME", config.HF_REPO_ID)
     hf_token = hf_token or os.getenv("HF_TOKEN", config.HF_TOKEN) or None
 
     logger.info("Loading model from Hub: %s", model_name)
-    tokenizer = AutoTokenizer.from_pretrained(model_name, token=hf_token)
-    model = AutoModelForTokenClassification.from_pretrained(model_name, token=hf_token)
-
-    logger.info("Model loaded. Running prediction …")
-    ner_pipeline = pipeline(
-        "ner",
-        model=model,
-        tokenizer=tokenizer,
-        aggregation_strategy="simple",
+    classifier = pipeline(
+        "text-classification",
+        model=model_name,
+        tokenizer=model_name,
+        token=hf_token,
+        top_k=None,       # return scores for all 6 emotion classes
+        truncation=True,
+        max_length=config.MAX_SEQ_LENGTH,
     )
-    results = ner_pipeline(input_text)
+
+    logger.info("Running prediction …")
+    results = classifier(input_text)
     return results
 
 
@@ -51,12 +52,18 @@ def main():
     logger.info("Input text: %s", input_text)
     results = run_inference(input_text)
 
+    # results is a list-of-lists when top_k=None
+    predictions = results[0] if isinstance(results[0], list) else results
+    predictions_sorted = sorted(predictions, key=lambda x: x["score"], reverse=True)
+
     output = {
         "model_name": os.getenv("HF_MODEL_NAME", config.HF_REPO_ID),
         "input_text": input_text,
-        "token_labels": [
-            {"token": r["word"], "label": r["entity_group"], "score": round(r["score"], 4)}
-            for r in results
+        "predicted_emotion": predictions_sorted[0]["label"],
+        "confidence": round(predictions_sorted[0]["score"], 4),
+        "all_scores": [
+            {"emotion": p["label"], "score": round(p["score"], 4)}
+            for p in predictions_sorted
         ],
     }
     print(json.dumps(output, indent=2))

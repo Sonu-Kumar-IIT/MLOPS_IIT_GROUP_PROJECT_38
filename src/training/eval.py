@@ -1,14 +1,20 @@
-"""Evaluation metrics computation for token-classification (NER)."""
+"""Evaluation metrics for Emotion Detection (sequence classification)."""
 
 import json
 
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
 import numpy as np
-from sklearn.metrics import classification_report
+import seaborn as sns
+from sklearn.metrics import classification_report, confusion_matrix
 
 from src import config
 from src.utils import get_logger
 
 logger = get_logger(__name__)
+
+EMOTION_NAMES = list(config.EMOTION_LABELS.values())
 
 
 def compute_metrics_fn(id2label: dict):
@@ -18,56 +24,56 @@ def compute_metrics_fn(id2label: dict):
         logits, labels = eval_pred
         predictions = np.argmax(logits, axis=-1)
 
-        true_labels, pred_labels = [], []
-        for pred_seq, label_seq in zip(predictions, labels):
-            for pred_id, label_id in zip(pred_seq, label_seq):
-                if label_id == -100:
-                    continue
-                true_labels.append(id2label.get(int(label_id), "O"))
-                pred_labels.append(id2label.get(int(pred_id), "O"))
-
-        report_dict = classification_report(
-            true_labels, pred_labels,
+        report = classification_report(
+            labels, predictions,
+            target_names=[id2label[i] for i in range(len(id2label))],
             output_dict=True,
             zero_division=0,
         )
         return {
-            "accuracy": report_dict.get("accuracy", 0.0),
-            "f1": report_dict.get("weighted avg", {}).get("f1-score", 0.0),
-            "precision": report_dict.get("weighted avg", {}).get("precision", 0.0),
-            "recall": report_dict.get("weighted avg", {}).get("recall", 0.0),
-            "macro_f1": report_dict.get("macro avg", {}).get("f1-score", 0.0),
-            "macro_precision": report_dict.get("macro avg", {}).get("precision", 0.0),
-            "macro_recall": report_dict.get("macro avg", {}).get("recall", 0.0),
+            "accuracy": report.get("accuracy", 0.0),
+            "f1": report.get("weighted avg", {}).get("f1-score", 0.0),
+            "precision": report.get("weighted avg", {}).get("precision", 0.0),
+            "recall": report.get("weighted avg", {}).get("recall", 0.0),
+            "macro_f1": report.get("macro avg", {}).get("f1-score", 0.0),
+            "macro_precision": report.get("macro avg", {}).get("precision", 0.0),
+            "macro_recall": report.get("macro avg", {}).get("recall", 0.0),
         }
 
     return compute_metrics
 
 
-def save_classification_report(trainer, val_dataset, id2label: dict):
-    """Run a full evaluation pass and persist the classification report."""
-    logger.info("Generating classification report …")
-    predictions_output = trainer.predict(val_dataset)
-    logits = predictions_output.predictions
-    labels = predictions_output.label_ids
+def save_classification_report(trainer, test_dataset, id2label: dict):
+    """Run a full evaluation pass on the test split and save reports."""
+    logger.info("Generating classification report on test split …")
+    output = trainer.predict(test_dataset)
+    logits = output.predictions
+    labels = output.label_ids
 
     predictions = np.argmax(logits, axis=-1)
-    true_labels, pred_labels = [], []
-    for pred_seq, label_seq in zip(predictions, labels):
-        for pred_id, label_id in zip(pred_seq, label_seq):
-            if label_id == -100:
-                continue
-            true_labels.append(id2label.get(int(label_id), "O"))
-            pred_labels.append(id2label.get(int(pred_id), "O"))
+    label_names = [id2label[i] for i in range(len(id2label))]
 
-    report_txt = classification_report(true_labels, pred_labels, zero_division=0)
-    report_dict = classification_report(true_labels, pred_labels, output_dict=True, zero_division=0)
+    report_txt = classification_report(labels, predictions, target_names=label_names, zero_division=0)
+    report_dict = classification_report(labels, predictions, target_names=label_names,
+                                        output_dict=True, zero_division=0)
 
     with open(config.CLASSIFICATION_REPORT_TXT, "w") as f:
         f.write(report_txt)
-
     with open(config.CLASSIFICATION_REPORT_JSON, "w") as f:
         json.dump(report_dict, f, indent=2)
 
-    logger.info("Classification report saved to %s", config.EVAL_RESULTS_DIR)
+    # Confusion matrix plot
+    cm = confusion_matrix(labels, predictions)
+    fig, ax = plt.subplots(figsize=(8, 6))
+    sns.heatmap(cm, annot=True, fmt="d", xticklabels=label_names, yticklabels=label_names,
+                cmap="Blues", ax=ax)
+    ax.set_xlabel("Predicted")
+    ax.set_ylabel("True")
+    ax.set_title("Confusion Matrix — Emotion Detection")
+    plt.tight_layout()
+    fig.savefig(config.CONFUSION_MATRIX_PATH, dpi=150)
+    plt.close(fig)
+
+    logger.info("Reports saved to %s", config.EVAL_RESULTS_DIR)
+    logger.info("\n%s", report_txt)
     return report_dict

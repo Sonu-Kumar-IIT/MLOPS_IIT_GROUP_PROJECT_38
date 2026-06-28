@@ -1,4 +1,4 @@
-"""Central configuration for the MLOps NER pipeline — Group 38."""
+"""Central configuration for the MLOps Emotion Detection pipeline — Group 38."""
 
 import os
 from pathlib import Path
@@ -16,40 +16,52 @@ EVAL_RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 MODEL_CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
 
 ID2LABEL_PATH = ARTIFACTS_DIR / "id2label.json"
-PROCESSED_DATA_PATH = ARTIFACTS_DIR / "processed_ner_data.pkl"
+PROCESSED_DATA_PATH = ARTIFACTS_DIR / "processed_emotion_data.pkl"
 CLASSIFICATION_REPORT_JSON = EVAL_RESULTS_DIR / "classification_report.json"
 CLASSIFICATION_REPORT_TXT = EVAL_RESULTS_DIR / "classification_report.txt"
+CONFUSION_MATRIX_PATH = EVAL_RESULTS_DIR / "confusion_matrix.png"
 
 # ---------------------------------------------------------------------------
-# Dataset
+# Dataset  — dair-ai/emotion
+#   6 emotion classes: sadness(0), joy(1), love(2), anger(3), fear(4), surprise(5)
+#   Full split sizes: train=16000, validation=2000, test=2000
 # ---------------------------------------------------------------------------
-DATASET_NAME = "yongsun-yoon/open-ner-english"
-TRAIN_SIZE = int(os.getenv("TRAIN_SIZE", "2000"))
-VALIDATION_SIZE = int(os.getenv("VALIDATION_SIZE", "400"))
+DATASET_NAME = "dair-ai/emotion"
+TEXT_COLUMN = "text"
+LABEL_COLUMN = "label"
+
+TRAIN_SIZE = int(os.getenv("TRAIN_SIZE", "16000"))
+VALIDATION_SIZE = int(os.getenv("VALIDATION_SIZE", "2000"))
+TEST_SIZE = int(os.getenv("TEST_SIZE", "2000"))
+
+# Fixed label mapping — will also be written to artifacts/id2label.json at runtime
+EMOTION_LABELS = {
+    0: "sadness",
+    1: "joy",
+    2: "love",
+    3: "anger",
+    4: "fear",
+    5: "surprise",
+}
+NUM_LABELS = len(EMOTION_LABELS)
 
 # ---------------------------------------------------------------------------
 # Model
 # ---------------------------------------------------------------------------
-MODEL_NAME = os.getenv("HF_MODEL_NAME", "dslim/bert-base-NER")
-HF_REPO_ID = os.getenv("HF_REPO_ID", "mlops-group38-ner")
-
-# ---------------------------------------------------------------------------
-# Label policy
-# ---------------------------------------------------------------------------
-RARE_ENTITY_POLICY = os.getenv("RARE_ENTITY_POLICY", "O")  # map rare tags -> O
-RARE_ENTITY_THRESHOLD = int(os.getenv("RARE_ENTITY_THRESHOLD", "50"))
-MAX_ENTITY_TYPES = int(os.getenv("MAX_ENTITY_TYPES", "500"))
+MODEL_NAME = os.getenv("HF_MODEL_NAME", "distilbert-base-uncased")
+HF_REPO_ID = os.getenv("HF_REPO_ID", "mlops-group38-emotion")
+MAX_SEQ_LENGTH = int(os.getenv("MAX_SEQ_LENGTH", "128"))
 
 # ---------------------------------------------------------------------------
 # Training hyperparameters
 # ---------------------------------------------------------------------------
-LEARNING_RATE = float(os.getenv("LEARNING_RATE", "3e-5"))
-NUM_TRAIN_EPOCHS = int(os.getenv("NUM_TRAIN_EPOCHS", "3"))
-PER_DEVICE_TRAIN_BATCH_SIZE = int(os.getenv("PER_DEVICE_TRAIN_BATCH_SIZE", "16"))
-PER_DEVICE_EVAL_BATCH_SIZE = int(os.getenv("PER_DEVICE_EVAL_BATCH_SIZE", "16"))
+LEARNING_RATE = float(os.getenv("LEARNING_RATE", "2e-5"))
+NUM_TRAIN_EPOCHS = int(os.getenv("NUM_TRAIN_EPOCHS", "4"))
+PER_DEVICE_TRAIN_BATCH_SIZE = int(os.getenv("PER_DEVICE_TRAIN_BATCH_SIZE", "32"))
+PER_DEVICE_EVAL_BATCH_SIZE = int(os.getenv("PER_DEVICE_EVAL_BATCH_SIZE", "64"))
 WEIGHT_DECAY = float(os.getenv("WEIGHT_DECAY", "0.01"))
-WARMUP_RATIO = float(os.getenv("WARMUP_RATIO", "0.1"))
-LOGGING_STEPS = int(os.getenv("LOGGING_STEPS", "50"))
+WARMUP_RATIO = float(os.getenv("WARMUP_RATIO", "0.06"))
+LOGGING_STEPS = int(os.getenv("LOGGING_STEPS", "100"))
 EVAL_STRATEGY = "epoch"
 SAVE_STRATEGY = "epoch"
 LOAD_BEST_MODEL_AT_END = True
@@ -58,7 +70,7 @@ METRIC_FOR_BEST_MODEL = "f1"
 # ---------------------------------------------------------------------------
 # W&B
 # ---------------------------------------------------------------------------
-WANDB_PROJECT = os.getenv("WANDB_PROJECT", "ner-mlops-group38-project")
+WANDB_PROJECT = os.getenv("WANDB_PROJECT", "emotion-mlops-group38-project")
 WANDB_RUN_NAME = os.getenv("WANDB_RUN_NAME", "run-v1")
 
 # ---------------------------------------------------------------------------

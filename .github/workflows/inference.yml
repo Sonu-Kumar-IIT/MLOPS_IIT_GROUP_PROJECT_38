@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       input_text:
-        description: "Text to run Named Entity Recognition on"
+        description: "Text to classify (emotion detection)"
         required: true
-        default: "Apple is looking at buying U.K. startup for $1 billion"
+        default: "I feel so happy today, everything is going great!"
 
 jobs:
   infer:
@@ -21,7 +21,7 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run NER inference from Hub
+      - name: Run Emotion Detection inference from Hub
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           INPUT_TEXT: ${{ github.event.inputs.input_text }}
