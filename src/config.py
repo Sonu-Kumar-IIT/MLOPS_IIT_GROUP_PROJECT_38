@@ -49,7 +49,7 @@ NUM_LABELS = len(EMOTION_LABELS)
 # Model
 # ---------------------------------------------------------------------------
 MODEL_NAME = os.getenv("HF_MODEL_NAME", "distilbert-base-uncased")
-HF_REPO_ID = os.getenv("HF_REPO_ID", "Sonu-Kumar-IIT/mlops-group38-emotion")
+HF_REPO_ID = os.getenv("HF_REPO_ID", "Sonu-kumar-IIT/distilbert-base")
 MAX_SEQ_LENGTH = int(os.getenv("MAX_SEQ_LENGTH", "128"))
 
 # ---------------------------------------------------------------------------

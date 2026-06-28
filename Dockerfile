@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 # Build-time override: pass your HF repo id when building
 # e.g.  docker build --build-arg HF_MODEL_NAME=Sonu-Kumar-IIT/mlops-group38-emotion .
-ARG HF_MODEL_NAME=Sonu-Kumar-IIT/mlops-group38-emotion
+ARG HF_MODEL_NAME=Sonu-kumar-IIT/distilbert-base
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
