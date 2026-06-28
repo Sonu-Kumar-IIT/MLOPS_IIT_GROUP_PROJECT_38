@@ -18,8 +18,11 @@ RUN pip install --no-cache-dir --upgrade pip && \
 
 COPY src ./src
 
-# Run as non-root user for security
-RUN adduser --disabled-password --gecos "" appuser
+# Pre-create directories that config.py creates at import time,
+# then create a non-root user and hand over ownership for security
+RUN mkdir -p /app/artifacts/eval_results /app/checkpoints && \
+    adduser --disabled-password --gecos "" appuser && \
+    chown -R appuser:appuser /app
 USER appuser
 
 CMD ["python", "-m", "src.inference.infrence_from_hub"]
