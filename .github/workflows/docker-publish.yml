@@ -37,15 +37,15 @@ jobs:
         run: |
           docker build \
             --build-arg HF_MODEL_NAME=${{ secrets.HF_REPO_ID }} \
-            -t ${{ secrets.DOCKERHUB_USERNAME }}/mlops-group38-ner:${{ steps.tag.outputs.tag }} .
+            -t ${{ secrets.DOCKERHUB_USERNAME }}/mlops-group38-emotion:${{ steps.tag.outputs.tag }} .
 
       - name: Push Docker image
         run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/mlops-group38-ner:${{ steps.tag.outputs.tag }}
+          docker push ${{ secrets.DOCKERHUB_USERNAME }}/mlops-group38-emotion:${{ steps.tag.outputs.tag }}
 
       - name: Smoke-test container
         run: |
           docker run --rm \
             -e HF_TOKEN="${{ secrets.HF_TOKEN }}" \
-            -e INPUT_TEXT="Google launched a new model in California." \
-            ${{ secrets.DOCKERHUB_USERNAME }}/mlops-group38-ner:${{ steps.tag.outputs.tag }}
+            -e INPUT_TEXT="I feel so happy and excited today!" \
+            ${{ secrets.DOCKERHUB_USERNAME }}/mlops-group38-emotion:${{ steps.tag.outputs.tag }}
