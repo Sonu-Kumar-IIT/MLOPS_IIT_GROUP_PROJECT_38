@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-ARG HF_MODEL_NAME=anuragvishwakarma02/mlops-group23-ner
+ARG HF_MODEL_NAME=your-username/mlops-group38-emotion
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

@@ -24,15 +24,17 @@ def init_wandb(run_name: str | None = None, extra_config: dict | None = None):
     run_config = {
         "model_name": config.MODEL_NAME,
         "dataset": config.DATASET_NAME,
+        "task": "emotion-detection",
+        "num_labels": config.NUM_LABELS,
         "train_size": config.TRAIN_SIZE,
         "validation_size": config.VALIDATION_SIZE,
+        "test_size": config.TEST_SIZE,
+        "max_seq_length": config.MAX_SEQ_LENGTH,
         "learning_rate": config.LEARNING_RATE,
         "epochs": config.NUM_TRAIN_EPOCHS,
         "batch_size": config.PER_DEVICE_TRAIN_BATCH_SIZE,
         "weight_decay": config.WEIGHT_DECAY,
         "warmup_ratio": config.WARMUP_RATIO,
-        "max_entity_types": config.MAX_ENTITY_TYPES,
-        "rare_entity_threshold": config.RARE_ENTITY_THRESHOLD,
     }
     if extra_config:
         run_config.update(extra_config)

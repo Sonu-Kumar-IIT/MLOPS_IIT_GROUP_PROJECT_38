@@ -1,11 +1,11 @@
-"""Training loop — wraps HuggingFace Trainer for the NER pipeline."""
+"""Training loop for Emotion Detection (sequence classification)."""
 
 import os
 
 from transformers import (
-    AutoModelForTokenClassification,
+    AutoModelForSequenceClassification,
     AutoTokenizer,
-    DataCollatorForTokenClassification,
+    DataCollatorWithPadding,
     TrainingArguments,
     Trainer,
 )
@@ -17,14 +17,14 @@ from src.utils import get_logger
 logger = get_logger(__name__)
 
 
-def build_model(label2id: dict, id2label: dict):
-    """Load the pretrained model with a fresh classification head."""
+def build_model(id2label: dict, label2id: dict):
+    """Load DistilBERT with a fresh sequence-classification head."""
     hf_token = os.getenv("HF_TOKEN", config.HF_TOKEN) or None
-    model = AutoModelForTokenClassification.from_pretrained(
+    model = AutoModelForSequenceClassification.from_pretrained(
         config.MODEL_NAME,
-        num_labels=len(label2id),
+        num_labels=config.NUM_LABELS,
         id2label={int(k): v for k, v in id2label.items()},
-        label2id=label2id,
+        label2id={v: int(k) for k, v in id2label.items()},
         ignore_mismatched_sizes=True,
         token=hf_token,
     )
@@ -36,16 +36,15 @@ def build_tokenizer():
     return AutoTokenizer.from_pretrained(config.MODEL_NAME, token=hf_token)
 
 
-def run_training(train_dataset, val_dataset, label2id: dict, id2label: dict):
-    """Build model, Trainer, and run training.
+def run_training(train_dataset, val_dataset, id2label: dict, label2id: dict):
+    """Build model and Trainer, then run fine-tuning.
 
     Returns (trainer, model, tokenizer).
     """
     tokenizer = build_tokenizer()
-    model = build_model(label2id, id2label)
-    data_collator = DataCollatorForTokenClassification(tokenizer)
+    model = build_model(id2label, label2id)
+    data_collator = DataCollatorWithPadding(tokenizer)
 
-    # Determine whether W&B is available
     report_to = "wandb" if os.getenv("WANDB_API_KEY") else "none"
 
     training_args = TrainingArguments(

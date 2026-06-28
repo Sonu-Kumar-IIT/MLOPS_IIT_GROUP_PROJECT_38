@@ -1,4 +1,4 @@
-"""Orchestrates the full NER training pipeline.
+"""Orchestrates the full Emotion Detection training pipeline.
 
 Usage:
     python -m src.training.main
@@ -16,25 +16,26 @@ logger = get_logger(__name__)
 
 
 def main():
-    logger.info("=== MLOps NER Pipeline — Group 38 ===")
-    logger.info("Model       : %s", config.MODEL_NAME)
+    logger.info("=== MLOps Emotion Detection Pipeline — Group 38 ===")
     logger.info("Dataset     : %s", config.DATASET_NAME)
+    logger.info("Model       : %s", config.MODEL_NAME)
     logger.info("Train size  : %d | Val size: %d", config.TRAIN_SIZE, config.VALIDATION_SIZE)
-    logger.info("LR          : %s | Epochs: %d", config.LEARNING_RATE, config.NUM_TRAIN_EPOCHS)
+    logger.info("LR          : %s | Epochs: %d | Batch: %d",
+                config.LEARNING_RATE, config.NUM_TRAIN_EPOCHS, config.PER_DEVICE_TRAIN_BATCH_SIZE)
 
-    # 1. Initialise W&B (no-op if key not set)
+    # 1. Initialise W&B (no-op if WANDB_API_KEY not set)
     init_wandb()
 
     # 2. Load and prepare data
-    train_ds, val_ds, label2id, id2label = load_and_prepare_data()
+    train_ds, val_ds, test_ds, id2label, label2id = load_and_prepare_data()
 
     # 3. Train
-    trainer, model, tokenizer = run_training(train_ds, val_ds, label2id, id2label)
+    trainer, model, tokenizer = run_training(train_ds, val_ds, id2label, label2id)
 
-    # 4. Save detailed classification report
-    save_classification_report(trainer, val_ds, id2label)
+    # 4. Evaluate on held-out test split and save reports + confusion matrix
+    save_classification_report(trainer, test_ds, id2label)
 
-    # 5. Push to Hugging Face Hub
+    # 5. Push best model to Hugging Face Hub
     push_model_to_hub(model, tokenizer)
 
     # 6. Finish W&B run

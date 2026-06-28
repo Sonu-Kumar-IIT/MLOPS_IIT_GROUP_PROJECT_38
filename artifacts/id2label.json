@@ -1,11 +1,8 @@
 {
-  "0": "O",
-  "1": "B-PER",
-  "2": "I-PER",
-  "3": "B-ORG",
-  "4": "I-ORG",
-  "5": "B-LOC",
-  "6": "I-LOC",
-  "7": "B-MISC",
-  "8": "I-MISC"
+  "0": "sadness",
+  "1": "joy",
+  "2": "love",
+  "3": "anger",
+  "4": "fear",
+  "5": "surprise"
 }
